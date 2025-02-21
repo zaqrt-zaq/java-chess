@@ -15,8 +15,9 @@ public class Rook extends ChessPieces {
     }
 
     @Override
-    public List<int[]> getPossibleMoves() {
+    public List<int[]> getPossibleMoves(boolean skipCheck) {
+        if (skipCheck) return moveByMore(Rook.moves);
 
-        return moveByMore(Rook.moves);
+        return validateMoves(moveByMore(Rook.moves));
     }
 }

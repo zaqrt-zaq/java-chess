@@ -26,8 +26,11 @@ public class Pawn extends ChessPieces {
         Board.board.makeMove(this, positionX, positionY);
     }
 
-    @Override
-    public List<int[]> getPossibleMoves() {
+    public List<int[]> getPossibleMoves(boolean skipCheck){
+        if(skipCheck) return getPossibleMoves();
+        return validateMoves(getPossibleMoves());
+    }
+    private List<int[]> getPossibleMoves() {
         List<int[]> moves = new ArrayList<>();
         ChessPieces[][] board = Board.getInstance().getCurrentBoard();
         int direction = isWhite() ? -1 : 1;

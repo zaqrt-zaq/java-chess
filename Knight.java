@@ -16,8 +16,9 @@ public class Knight extends ChessPieces {
     }
 
     @Override
-    public List<int[]> getPossibleMoves() {
-        return moveByOne(Knight.moves);
+    public List<int[]> getPossibleMoves(boolean skipCheck) {
+        if(skipCheck) return moveByOne(Knight.moves);
+        return validateMoves(moveByOne(Knight.moves));
     }
 
 }

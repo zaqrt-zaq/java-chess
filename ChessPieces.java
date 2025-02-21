@@ -22,7 +22,7 @@ abstract class ChessPieces {
 
     protected abstract char getWhiteSymbol();
 
-    public abstract List<int[]> getPossibleMoves();
+    public abstract List<int[]> getPossibleMoves(boolean skipCheck);
 
     public boolean isWhite() {
         return isWhite;
@@ -40,50 +40,31 @@ abstract class ChessPieces {
         return hasMoved;
     }
 
-    private static List<int[]> moveByOne(int[][] directions, int x, int y, boolean isPieceWhite) {
+    protected List<int[]> move(int[][] directions, boolean isLimited) {
+
         List<int[]> moves = new ArrayList<>();
+
         ChessPieces[][] board = Board.board.getCurrentBoard();
 
-        for (int[] move : directions) {
-            int newX = x + move[0];
-            int newY = y + move[1];
 
-            if (newX < 0 || newX >= 8 || newY < 0 || newY >= 8)
-                continue;
+        for (int[] direction : directions) {
 
-
-            ChessPieces targetPiece = board[newX][newY];
-            if (targetPiece == null || targetPiece.isWhite() != isPieceWhite)
-                moves.add(new int[]{newX, newY});
-
-        }
-        return moves;
-    }
-
-    protected List<int[]> moveByOne(int[][] directions) {
-        return moveByOne(directions, positionX, positionY, isWhite);
-    }
-
-    private static List<int[]> moveByMore(int[][] directions, int x, int y, boolean isPieceWhite) {
-        ChessPieces[][] board = Board.board.getCurrentBoard();
-        ArrayList<int[]> moves = new ArrayList<>();
-
-        for (int[] move : directions) {
-            for (int j = 1; j < 8; j++) {
-                int newX = x + move[0] * j;
-                int newY = y + move[1] * j;
-
-                if (newX < 0 || newX >= 8 || newY < 0 || newY >= 8)
+            for (int j = 1; j <= (isLimited ? 1 : 7); j++) {
+                int newX = positionX + direction[0] * j;
+                int newY = positionY + direction[1] * j;
+                if (newX < 0 || newX >= 8 || newY < 0 || newY >= 8) {
                     break;
-
+                }
                 ChessPieces targetPiece = board[newX][newY];
-
                 if (targetPiece == null) {
                     moves.add(new int[]{newX, newY});
                 } else {
-                    if (targetPiece.isWhite != isPieceWhite) {
+                    if (targetPiece.isWhite() != this.isWhite()) {
                         moves.add(new int[]{newX, newY});
                     }
+                    break;
+                }
+                if (isLimited) {
                     break;
                 }
             }
@@ -91,9 +72,12 @@ abstract class ChessPieces {
         return moves;
     }
 
+    protected List<int[]> moveByOne(int[][] directions) {
+        return move(directions, true);
+    }
 
     protected List<int[]> moveByMore(int[][] directions) {
-        return moveByMore(directions, positionX, positionY, isWhite);
+        return move(directions, false);
     }
 
     protected void movePiece(int x, int y) {
@@ -102,70 +86,88 @@ abstract class ChessPieces {
         this.hasMoved = true;
     }
 
-
     public static void makeSpecialMove(ChessPieces piece, int x, int y) {
         if (piece instanceof King)
             ((King) piece).castle(x == 2);
         else if (piece instanceof Pawn)
             ((Pawn) piece).unpasoud(x,y);
-            return;
     }
 
     static boolean isKingInCheck(int x, int y, boolean isKingWhite, ChessPieces[][] board) {
         int pawnDirection = isKingWhite ? -1 : 1;
 
-        for (int[] move : moveByOne(Knight.moves, x, y, isKingWhite)) {
-            ChessPieces piece = board[move[0]][move[1]];
-            if (piece instanceof Knight && piece.isWhite != isKingWhite) {
-                return true;
-            }
-        }
-
-        //if it ain't broke don't fix it
-        if ((x > 0 && y + pawnDirection >= 0 && y + pawnDirection < 8 &&
-                board[x + pawnDirection][y + 1] instanceof Pawn &&
-                board[x + pawnDirection][y + 1].isWhite != isKingWhite) ||
-            (x < 7 && y + pawnDirection >= 0 && y + pawnDirection < 8 &&
-                board[x + pawnDirection][y - 1] instanceof Pawn &&
-                board[x + pawnDirection][y - 1].isWhite != isKingWhite)) {
-            return true;
-        }
-
-        for (int[] direction : King.moves) {
-            int newX = x, newY = y;
-            for (int i = 1; i < 8; i++) {
-                newX += direction[0];
-                newY += direction[1];
-
-                if (newX < 0 || newX >= 8 || newY < 0 || newY >= 8) break;
-
-                ChessPieces targetPiece = board[newX][newY];
-                if (targetPiece == null) continue;
-                if (targetPiece.isWhite == isKingWhite) break;
-                switch (targetPiece) {
-                    case Queen queen -> { return true; }
-                    case Rook rook when (direction[0] == 0 || direction[1] == 0) -> { return true; }
-                    case Bishop bishop when (direction[0] != 0 && direction[1] != 0) -> { return true; }
-                    default -> {}
-                }
-                break;
-            }
-        }
-
-        for (int[] move : King.moves) {
+        // Sprawdzenie ataku przez skoczka
+        for (int[] move : Knight.moves) {
             int newX = x + move[0];
             int newY = y + move[1];
             if (newX >= 0 && newX < 8 && newY >= 0 && newY < 8) {
-                ChessPieces targetPiece = board[newX][newY];
-                if (targetPiece instanceof King && targetPiece.isWhite != isKingWhite) {
+                ChessPieces piece = board[newX][newY];
+                if (piece instanceof Knight && piece.isWhite() != isKingWhite) {
                     return true;
                 }
             }
         }
 
-        return false;
-    }
+        // Sprawdzenie ataku przez pionki
+        if ((x > 0 && y + pawnDirection >= 0 && y + pawnDirection < 8 &&
+                board[x + pawnDirection][y + 1] instanceof Pawn &&
+                board[x + pawnDirection][y + 1].isWhite() != isKingWhite) ||
+                (x < 7 && y + pawnDirection >= 0 && y + pawnDirection < 8 &&
+                        board[x + pawnDirection][y - 1] instanceof Pawn &&
+                        board[x + pawnDirection][y - 1].isWhite() != isKingWhite)) {
+            return true;
+        }
 
+        // Sprawdzenie ataku przez wieżę i królową
+        for (int[] direction : Rook.moves) {
+            for (int i = 1; i < 8; i++) {
+                int newX = x + direction[0] * i;
+                int newY = y + direction[1] * i;
+
+                if (newX < 0 || newX >= 8 || newY < 0 || newY >= 8) break;
+
+                ChessPieces targetPiece = board[newX][newY];
+                if (targetPiece == null) continue;
+                if (targetPiece.isWhite() == isKingWhite) break; // Zatrzymaj, jeśli napotkasz swoją figurę
+                if (targetPiece instanceof Rook || targetPiece instanceof Queen) {
+                    return true; // Król jest w szachu
+                }
+                break; // Zatrzymaj, jeśli napotkasz inną figurę
+            }
+        }
+
+        // Sprawdzenie ataku przez gońca i królową
+        for (int[] direction : Bishop.moves) {
+            for (int i = 1; i < 8; i++) {
+                int newX = x + direction[0] * i;
+                int newY = y + direction[1] * i;
+
+                if (newX < 0 || newX >= 8 || newY < 0 || newY >= 8) break;
+
+                ChessPieces targetPiece = board[newX][newY];
+                if (targetPiece == null) continue;
+                if (targetPiece.isWhite() == isKingWhite) break; // Zatrzymaj, jeśli napotkasz swoją figurę
+                if (targetPiece instanceof Bishop || targetPiece instanceof Queen) {
+                    return true; // Król jest w szachu
+                }
+                break; // Zatrzymaj, jeśli napotkasz inną figurę
+            }
+        }
+
+        // Sprawdzenie ataku przez króla
+        for (int[] move : King.moves) {
+            int newX = x + move[0];
+            int newY = y + move[1];
+            if (newX >= 0 && newX < 8 && newY >= 0 && newY < 8) {
+                ChessPieces targetPiece = board[newX][newY];
+                if (targetPiece instanceof King && targetPiece.isWhite() != isKingWhite) {
+                    return true; // Król przeciwnika atakuje
+                }
+            }
+        }
+
+        return false; // Król nie jest w szachu
+    }
 
 
     static boolean isKingInCheck(King king) {
@@ -206,7 +208,16 @@ abstract class ChessPieces {
             if (board[blackRow][col] instanceof Pawn)
                 ((Pawn) board[blackRow][col]).setCanBeUmpasoundet(true);
         }
-        return;
+    }
+
+    protected List<int[]> validateMoves(List<int[]> moves) {
+        ArrayList<int[]> possibleMoves = new ArrayList<>();
+
+        for (int[] move : moves)
+            if(isMoveValid(this,move[0],move[1]))
+                possibleMoves.add(move);
+
+        return possibleMoves;
     }
 
 }

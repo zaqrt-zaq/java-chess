@@ -16,8 +16,11 @@ public class King extends ChessPieces {
         return '♔';
     }
 
-    @Override
-    public List<int[]> getPossibleMoves() {
+    public List<int[]> getPossibleMoves(boolean skipCheck) {
+        return validateMoves(getPossibleMoves());
+    }
+
+    private List<int[]> getPossibleMoves() {
 
 
         ArrayList<int[]> possibleMoves = new ArrayList<>(this.moveByOne(King.moves));

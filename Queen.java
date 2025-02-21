@@ -13,11 +13,13 @@ public class Queen extends ChessPieces {
     }
 
     @Override
-    public List<int[]> getPossibleMoves() {
+    public List<int[]> getPossibleMoves(boolean skipCheck) {
         ArrayList<int[]> moves = new ArrayList<>();
+        moves.addAll(moveByMore(Bishop.moves));
+        moves.addAll(moveByMore(Rook.moves));
 
-        ArrayList<int[]> possibleMoves = new ArrayList<>(moveByMore(Bishop.moves));
-        possibleMoves.addAll(moveByMore(Rook.moves));
-        return possibleMoves;
+        if (skipCheck) return moves;
+
+        return validateMoves(moves);
     }
 }

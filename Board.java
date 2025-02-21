@@ -109,14 +109,10 @@ public class Board extends JFrame {
         }
     }
 
-    private void onPieceClick(int row, int col) {
-        ChessPieces piece = currentPosition[row][col];
-        currentPieceSelected = piece;
-        resetBoardColors();
-
+    private boolean canSkipCheck(ChessPieces piece, int row, int col) {
         //optimization in action
         boolean skipCheck = false;
-        if (!(currentPieceSelected instanceof King)) { // if it works dont fix it
+        if (!(currentPieceSelected instanceof King) && !(currentPieceSelected instanceof Knight)) { // if it works dont fix it
             currentPosition[row][col] = null;
             King king = (King) (isCurrentPlayerWhite ? currentPosition[whiteKing[0]][whiteKing[1]]:currentPosition[blackKing[0]][blackKing[1]]);
             if (!(ChessPieces.isKingInCheck(king))){
@@ -124,12 +120,17 @@ public class Board extends JFrame {
             }
             currentPosition[row][col] = currentPieceSelected;
         }
+        return skipCheck;
+    }
 
-        List<int[]> possibleMoves = piece.getPossibleMoves();
+    private void onPieceClick(int row, int col) {
+        ChessPieces piece = currentPosition[row][col];
+        currentPieceSelected = piece;
+        resetBoardColors();
+
+        List<int[]> possibleMoves = piece.getPossibleMoves(canSkipCheck(piece, row, col));
 
         for (int[] move : possibleMoves) {
-            if (!skipCheck && !ChessPieces.isMoveValid(currentPieceSelected, move[0], move[1]))
-                continue;
             grid[move[0]][move[1]].setBackground(Color.GREEN);
             if (piece instanceof King && (move[1] - 2 == piece.getPositionY() || move[1] + 2 == piece.getPositionY()))
                 grid[move[0]][move[1]].setBackground(Color.YELLOW);
