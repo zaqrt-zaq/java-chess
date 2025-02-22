@@ -14,8 +14,8 @@ public class Bishop extends ChessPieces {
     }
 
     @Override
-    public List<int[]> getPossibleMoves(boolean skipCheck) {
-        if (skipCheck) return moveByMore(Bishop.moves);
+    public List<int[]> getPossibleMoves() {
+        if (this.canSkipCheck()) return moveByMore(Bishop.moves);
 
         return validateMoves(moveByMore(Bishop.moves));
     }

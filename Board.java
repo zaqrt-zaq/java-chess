@@ -3,9 +3,9 @@ import java.awt.*;
 import java.awt.event.ActionListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
-import java.util.Arrays;
 import java.util.List;
 
+@SuppressWarnings("ClassEscapesDefinedScope")
 public class Board extends JFrame {
     static Board board;
 
@@ -57,6 +57,10 @@ public class Board extends JFrame {
         return currentPosition;
     }
 
+    public King getCurrentKing(ChessPieces piece) {
+        return (King) (piece.isWhite()?currentPosition[whiteKing[0]][whiteKing[1]]:currentPosition[blackKing[0]][blackKing[1]]);
+    }
+
 
     private Board() {
         super();
@@ -105,31 +109,16 @@ public class Board extends JFrame {
                     case 5 -> new Pawn(row, col, isWhite);
                     default -> null;
                 };
+                printBoard();
             }
         }
-    }
-
-    private boolean canSkipCheck(ChessPieces piece, int row, int col) {
-        //optimization in action
-        boolean skipCheck = false;
-        if (!(currentPieceSelected instanceof King) && !(currentPieceSelected instanceof Knight)) { // if it works dont fix it
-            currentPosition[row][col] = null;
-            King king = (King) (isCurrentPlayerWhite ? currentPosition[whiteKing[0]][whiteKing[1]]:currentPosition[blackKing[0]][blackKing[1]]);
-            if (!(ChessPieces.isKingInCheck(king))){
-                skipCheck = true;
-            }
-            currentPosition[row][col] = currentPieceSelected;
-        }
-        return skipCheck;
     }
 
     private void onPieceClick(int row, int col) {
         ChessPieces piece = currentPosition[row][col];
         currentPieceSelected = piece;
         resetBoardColors();
-
-        List<int[]> possibleMoves = piece.getPossibleMoves(canSkipCheck(piece, row, col));
-
+        List<int[]> possibleMoves = piece.getPossibleMoves();
         for (int[] move : possibleMoves) {
             grid[move[0]][move[1]].setBackground(Color.GREEN);
             if (piece instanceof King && (move[1] - 2 == piece.getPositionY() || move[1] + 2 == piece.getPositionY()))
@@ -147,6 +136,14 @@ public class Board extends JFrame {
                 grid[i][j].setBackground((i + j) % 2 == 0 ? Color.WHITE : Color.GRAY);
 
     }
+    void printBoard(){
+        for (int i = 0; i < 8; i++) {
+            for (int j = 0; j < 8; j++) {
+                System.out.print(currentPosition[i][j] != null? currentPosition[i][j].toString():".");
+            }
+            System.out.println();
+        }
+    }
 
     public void makeMove(ChessPieces piece, int row, int col) {
         currentPosition[piece.getPositionX()][piece.getPositionY()] = null;
@@ -156,18 +153,23 @@ public class Board extends JFrame {
         resetBoardColors();
         ChessPieces.removeUponsanuts();
         piece.movePiece(row, col);
-
+        printBoard();
         if (piece instanceof Pawn && (row == 0 || row == 7)) {
             promotePawn(piece, row, col);
         }
 
         if (currentPieceSelected != null)
             isCurrentPlayerWhite = !currentPieceSelected.isWhite();
-        currentPieceSelected = null;
-
+        board.printBoard();
         resetBoardColors();
         createActionListeners();
         repaint();
+        if (isCheckmate(isCurrentPlayerWhite)) {
+            String winner = isCurrentPlayerWhite ? "Czarne" : "Białe"; // Przeciwnik wygrywa
+            JOptionPane.showMessageDialog(this, winner + " wygrały!", "Koniec gry", JOptionPane.INFORMATION_MESSAGE);
+        }
+        currentPieceSelected = null;
+
     }
 
     private void createActionListeners() {
@@ -179,13 +181,13 @@ public class Board extends JFrame {
                     grid[x][y].removeActionListener(al);
                 }
                 if (currentPosition[x][y] != null && isCurrentPlayerWhite == currentPosition[x][y].isWhite())
-                    grid[x][y].addActionListener(e -> onPieceClick(row, col));
+                    grid[x][y].addActionListener(_ -> onPieceClick(row, col));
 
                 if (grid[x][y].getBackground() == Color.GREEN)
-                    grid[x][y].addActionListener(e -> makeMove(currentPieceSelected, row, col));
+                    grid[x][y].addActionListener(_ -> makeMove(currentPieceSelected, row, col));
 
                 if (grid[x][y].getBackground() == Color.YELLOW)
-                    grid[x][y].addActionListener(e -> ChessPieces.makeSpecialMove(currentPieceSelected, row, col));
+                    grid[x][y].addActionListener(_ -> ChessPieces.makeSpecialMove(currentPieceSelected, row, col));
             }
         }
     }
@@ -213,4 +215,23 @@ public class Board extends JFrame {
         grid[row][col].setText(newPiece.toString());
     }
 
+    public boolean isCheckmate(boolean isWhite) {
+        int[] kingPosition = isWhite ? getWhiteKing() : getBlackKing();
+        ChessPieces king = currentPosition[kingPosition[0]][kingPosition[1]];
+
+        if (!ChessPieces.isKingInCheck((King) king)) {
+            return false;
+        }
+
+        for (int i = 0; i < 8; i++) {
+            for (int j = 0; j < 8; j++) {
+                ChessPieces piece = currentPosition[i][j];
+                if (piece != null && piece.isWhite() == isWhite && !piece.getPossibleMoves().isEmpty()) {
+                    return false;
+                }
+            }
+        }
+
+        return true;
+    }
 }

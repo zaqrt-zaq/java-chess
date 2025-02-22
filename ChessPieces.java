@@ -22,7 +22,7 @@ abstract class ChessPieces {
 
     protected abstract char getWhiteSymbol();
 
-    public abstract List<int[]> getPossibleMoves(boolean skipCheck);
+    public abstract List<int[]> getPossibleMoves();
 
     public boolean isWhite() {
         return isWhite;
@@ -45,7 +45,7 @@ abstract class ChessPieces {
         List<int[]> moves = new ArrayList<>();
 
         ChessPieces[][] board = Board.board.getCurrentBoard();
-
+        Board.board.printBoard();
 
         for (int[] direction : directions) {
 
@@ -185,12 +185,10 @@ abstract class ChessPieces {
         board[oldX][oldY] = null;
         board[x][y] = piece;
 
-        if (piece instanceof King)
-            isValid = !isKingInCheck(x, y, piece.isWhite, board);
-        else {
-            int[] king = piece.isWhite ? Board.board.getWhiteKing() : Board.board.getBlackKing();
-            isValid = !isKingInCheck(king[0], king[1], piece.isWhite, board);
-        }
+        if (piece instanceof King) {
+            isValid = !isKingInCheck(x,y,piece.isWhite(), board);
+        }else
+            isValid = !isKingInCheck(Board.getInstance().getCurrentKing(piece));
 
         board[oldX][oldY] = piece;
         board[x][y] = previousPiece;
@@ -219,5 +217,22 @@ abstract class ChessPieces {
 
         return possibleMoves;
     }
+
+    protected boolean canSkipCheck() {
+        //optimization in action
+        if (ChessPieces.isKingInCheck(Board.getInstance().getCurrentKing(this)))
+            return false;
+        boolean skipCheck = false;
+
+        if (!(this instanceof King) && !(this instanceof Knight)) { // if it works dont fix it
+            Board.getInstance().getCurrentBoard()[this.positionX][this.positionY] = null;
+            if (!(ChessPieces.isKingInCheck(Board.getInstance().getCurrentKing(this)))){
+                skipCheck = true;
+            }
+            Board.getInstance().getCurrentBoard()[this.positionX][this.positionY] = this;
+        }
+        return skipCheck;
+    }
+
 
 }

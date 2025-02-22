@@ -16,12 +16,8 @@ public class King extends ChessPieces {
         return '♔';
     }
 
-    public List<int[]> getPossibleMoves(boolean skipCheck) {
-        return validateMoves(getPossibleMoves());
-    }
 
-    private List<int[]> getPossibleMoves() {
-
+    public List<int[]> getPossibleMoves() {
 
         ArrayList<int[]> possibleMoves = new ArrayList<>(this.moveByOne(King.moves));
         if (canCastle(Board.board.getCurrentBoard()[this.getPositionX()][7]))
@@ -29,7 +25,7 @@ public class King extends ChessPieces {
         if (canCastle(Board.board.getCurrentBoard()[this.getPositionX()][0]))
             possibleMoves.add(new int[]{this.getPositionX(), this.getPositionY() - 2});
 
-        return possibleMoves;
+        return validateMoves(possibleMoves);
     }
 
     private boolean canCastle(ChessPieces piece) {
