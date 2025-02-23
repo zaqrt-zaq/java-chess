@@ -20,9 +20,9 @@ public class King extends ChessPieces {
     public List<int[]> getPossibleMoves() {
 
         ArrayList<int[]> possibleMoves = new ArrayList<>(this.moveByOne(King.moves));
-        if (canCastle(Board.board.getCurrentBoard()[this.getPositionX()][7]))
+        if (canCastle(Board.getInstance().getCurrentBoard()[this.getPositionX()][7]))
             possibleMoves.add(new int[]{this.getPositionX(), this.getPositionY() + 2});
-        if (canCastle(Board.board.getCurrentBoard()[this.getPositionX()][0]))
+        if (canCastle(Board.getInstance().getCurrentBoard()[this.getPositionX()][0]))
             possibleMoves.add(new int[]{this.getPositionX(), this.getPositionY() - 2});
 
         return validateMoves(possibleMoves);
@@ -36,8 +36,8 @@ public class King extends ChessPieces {
 
         int y = getPositionY() + step;
         while(y != piece.getPositionY()){
-            if (Board.board.getCurrentBoard()[getPositionX()][y] != null) return false;
-            if (isKingInCheck(this.getPositionX(),y,this.isWhite(),Board.board.getCurrentBoard())) return false;
+            if (Board.getInstance().getCurrentBoard()[getPositionX()][y] != null) return false;
+            if (isKingInCheck(this.getPositionX(),y,this.isWhite(),Board.getInstance().getCurrentBoard())) return false;
             y+=step;
         }
 
@@ -45,16 +45,15 @@ public class King extends ChessPieces {
     }
 
     public void castle(boolean isLongCastle) {
-        ChessPieces rook = Board.board.getCurrentBoard()[this.getPositionX()][isLongCastle ? 0 : 7];
-
-        Board.board.makeMove(rook, this.getPositionX(), isLongCastle ? 3 : 5);
-        Board.board.makeMove(this, this.getPositionX(), isLongCastle ? 2 : 6);
+        int rookCol = isLongCastle ? 0 : 7;
+        ChessPieces rook = Board.getInstance().getCurrentBoard()[getPositionX()][rookCol];
+        
+        ChessPieces.makeMove(rook, this.getPositionX(), isLongCastle ? 3 : 5, Board.getInstance().getCurrentBoard());
+        ChessPieces.makeMove(this, this.getPositionX(), isLongCastle ? 2 : 6, Board.getInstance().getCurrentBoard());
     }
+    @Override
     protected void movePiece(int x, int y) {
         super.movePiece(x, y);
-        if (isWhite())
-            Board.board.setWhiteKing(new int[]{x, y});
-        else
-            Board.board.setBlackKing(new int[]{x, y});
+        ChessPieces.updateKingPosition(isWhite(), new int[]{x, y});
     }
 }

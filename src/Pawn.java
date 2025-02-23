@@ -22,52 +22,53 @@ public class Pawn extends ChessPieces {
     }
     
     public void captureEnPassant(int positionX, int positionY) {
-        ChessPieces[][] board = Board.board.getCurrentBoard();
-        // Remove the captured pawn from its current position
+        ChessPieces[][] board = Board.getInstance().getCurrentBoard();
         board[getPositionX()][positionY] = null;
-        // Update UI for the captured pawn position
-        Board.board.getGrid()[getPositionX()][positionY].setText("");
-        // Move the capturing pawn to the new position
-        Board.board.makeMove(this, positionX, positionY);
+        ChessPieces.makeMove(this, positionX, positionY, board);
     }
 
+    @Override
     public List<int[]> getPossibleMoves() {
-        List<int[]> moves = new ArrayList<>();
-        ChessPieces[][] board = Board.getInstance().getCurrentBoard();
+        ArrayList<int[]> possibleMoves = new ArrayList<>();
         int direction = isWhite() ? -1 : 1;
-        int x = getPositionX();
-        int y = getPositionY();
+        ChessPieces[][] board = Board.getInstance().getCurrentBoard();
 
-        int newX = getPositionX() + direction;
-        if (board[newX][y] == null) {
-            moves.add(new int[]{newX, y});
-            if (!this.hasMoved() && board[newX+direction][y] == null)
-                moves.add(new int[]{newX + direction, y});
-        }
+        // Move forward one square
+        if (getPositionX() + direction >= 0 && getPositionX() + direction < 8 &&
+            board[getPositionX() + direction][getPositionY()] == null) {
+            possibleMoves.add(new int[]{getPositionX() + direction, getPositionY()});
 
-        int[] directions = {-1, 1};
-        for (int directionX : directions) {
-            int newY = y + directionX;
-            if (newY >= 0 && newY < 8) {
-                ChessPieces targetPiece = board[newX][newY];
-                if (targetPiece != null && targetPiece.isWhite() != this.isWhite())
-                    moves.add(new int[]{newX, newY});
+            // Move forward two squares from starting position
+            if (!hasMoved() && board[getPositionX() + 2 * direction][getPositionY()] == null) {
+                possibleMoves.add(new int[]{getPositionX() + 2 * direction, getPositionY()});
             }
         }
 
-        if (getPositionX() == (isWhite()?3:4)) {
-            // Check left side
-            if (y>0 && board[x][y-1] instanceof Pawn && ((Pawn) board[x][y-1]).isCanBeEnPassantCaptured()){
-                moves.add(new int[]{x+direction,y-1});
-            }
-            // Check right side
-            if (y<7 && board[x][y+1] instanceof Pawn && ((Pawn) board[x][y+1]).isCanBeEnPassantCaptured()){
-                moves.add(new int[]{x+direction,y+1});
+        // Capture diagonally
+        for (int dy = -1; dy <= 1; dy += 2) {
+            if (getPositionX() + direction >= 0 && getPositionX() + direction < 8 &&
+                getPositionY() + dy >= 0 && getPositionY() + dy < 8) {
+                
+                // Normal capture
+                ChessPieces targetPiece = board[getPositionX() + direction][getPositionY() + dy];
+                if (targetPiece != null && targetPiece.isWhite() != isWhite()) {
+                    possibleMoves.add(new int[]{getPositionX() + direction, getPositionY() + dy});
+                }
+                
+                // En passant capture
+                if (getPositionX() == (isWhite() ? 3 : 4)) {
+                    ChessPieces adjacentPiece = board[getPositionX()][getPositionY() + dy];
+                    if (adjacentPiece instanceof Pawn && 
+                        adjacentPiece.isWhite() != isWhite() && 
+                        ((Pawn) adjacentPiece).canBeEnPassantCaptured) {
+                        possibleMoves.add(new int[]{getPositionX() + direction, getPositionY() + dy});
+                    }
+                }
             }
         }
 
-        if(this.canSkipCheck()) return moves;
-        return validateMoves(moves);
+        if(this.canSkipCheck()) return possibleMoves;
+        return validateMoves(possibleMoves);
     }
 
     @Override
