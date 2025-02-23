@@ -11,18 +11,23 @@ public class Pawn extends ChessPieces {
         return '♙';
     }
 
-    private boolean canBeUmpasoundet = false;
+    private boolean canBeEnPassantCaptured = false;
 
-    public void setCanBeUmpasoundet(boolean canBeUmpasoundet) {
-        this.canBeUmpasoundet = canBeUmpasoundet;
+    public void setCanBeEnPassantCaptured(boolean canBeEnPassantCaptured) {
+        this.canBeEnPassantCaptured = canBeEnPassantCaptured;
     }
 
-    public boolean isCanBeUmpasoundet() {
-        return canBeUmpasoundet;
+    public boolean isCanBeEnPassantCaptured() {
+        return canBeEnPassantCaptured;
     }
-    public void unpasoud(int positionX, int positionY) {
+    
+    public void captureEnPassant(int positionX, int positionY) {
         ChessPieces[][] board = Board.board.getCurrentBoard();
-        board[positionX+1][positionY] = null;
+        // Remove the captured pawn from its current position
+        board[getPositionX()][positionY] = null;
+        // Update UI for the captured pawn position
+        Board.board.getGrid()[getPositionX()][positionY].setText("");
+        // Move the capturing pawn to the new position
         Board.board.makeMove(this, positionX, positionY);
     }
 
@@ -50,9 +55,14 @@ public class Pawn extends ChessPieces {
             }
         }
 
-        if (getPositionX() == (isWhite()?5:4)) {
-            if (y>0 && board[x][y-1] instanceof Pawn && ((Pawn) board[x][y]).isCanBeUmpasoundet()){
+        if (getPositionX() == (isWhite()?3:4)) {
+            // Check left side
+            if (y>0 && board[x][y-1] instanceof Pawn && ((Pawn) board[x][y-1]).isCanBeEnPassantCaptured()){
                 moves.add(new int[]{x+direction,y-1});
+            }
+            // Check right side
+            if (y<7 && board[x][y+1] instanceof Pawn && ((Pawn) board[x][y+1]).isCanBeEnPassantCaptured()){
+                moves.add(new int[]{x+direction,y+1});
             }
         }
 
@@ -62,8 +72,12 @@ public class Pawn extends ChessPieces {
 
     @Override
     protected void movePiece(int x, int y) {
-        if (this.getPositionX() + 2 == x ) this.canBeUmpasoundet = false;
+        // Set canBeEnPassantCaptured to true if pawn moves two squares
+        if (Math.abs(this.getPositionX() - x) == 2) {
+            this.canBeEnPassantCaptured = true;
+        } else {
+            this.canBeEnPassantCaptured = false;
+        }
         super.movePiece(x, y);
-        return;
     }
 }

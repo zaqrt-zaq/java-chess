@@ -16,7 +16,7 @@ public class Board extends JFrame {
         return board;
     }
 
-    private final JButton[][] grid;
+    JButton[][] grid;
     static private final int[][] starting_position = {
             {0, 1, 2, 3, 4, 2, 1, 0},
             {5, 5, 5, 5, 5, 5, 5, 5},
@@ -109,7 +109,6 @@ public class Board extends JFrame {
                     case 5 -> new Pawn(row, col, isWhite);
                     default -> null;
                 };
-                printBoard();
             }
         }
     }
@@ -136,31 +135,23 @@ public class Board extends JFrame {
                 grid[i][j].setBackground((i + j) % 2 == 0 ? Color.WHITE : Color.GRAY);
 
     }
-    void printBoard(){
-        for (int i = 0; i < 8; i++) {
-            for (int j = 0; j < 8; j++) {
-                System.out.print(currentPosition[i][j] != null? currentPosition[i][j].toString():".");
-            }
-            System.out.println();
-        }
-    }
 
     public void makeMove(ChessPieces piece, int row, int col) {
+        ChessPieces.resetEnPassantFlags();
+
         currentPosition[piece.getPositionX()][piece.getPositionY()] = null;
         currentPosition[row][col] = piece;
         grid[piece.getPositionX()][piece.getPositionY()].setText("");
         grid[row][col].setText(piece.toString());
         resetBoardColors();
-        ChessPieces.removeUponsanuts();
         piece.movePiece(row, col);
-        printBoard();
+
         if (piece instanceof Pawn && (row == 0 || row == 7)) {
             promotePawn(piece, row, col);
         }
 
         if (currentPieceSelected != null)
             isCurrentPlayerWhite = !currentPieceSelected.isWhite();
-        board.printBoard();
         resetBoardColors();
         createActionListeners();
         repaint();
@@ -181,13 +172,13 @@ public class Board extends JFrame {
                     grid[x][y].removeActionListener(al);
                 }
                 if (currentPosition[x][y] != null && isCurrentPlayerWhite == currentPosition[x][y].isWhite())
-                    grid[x][y].addActionListener(_ -> onPieceClick(row, col));
+                    grid[x][y].addActionListener(e -> onPieceClick(row, col));
 
                 if (grid[x][y].getBackground() == Color.GREEN)
-                    grid[x][y].addActionListener(_ -> makeMove(currentPieceSelected, row, col));
+                    grid[x][y].addActionListener(e -> makeMove(currentPieceSelected, row, col));
 
                 if (grid[x][y].getBackground() == Color.YELLOW)
-                    grid[x][y].addActionListener(_ -> ChessPieces.makeSpecialMove(currentPieceSelected, row, col));
+                    grid[x][y].addActionListener(e -> ChessPieces.makeSpecialMove(currentPieceSelected, row, col));
             }
         }
     }
@@ -233,5 +224,9 @@ public class Board extends JFrame {
         }
 
         return true;
+    }
+
+    JButton[][] getGrid() {
+        return grid;
     }
 }
