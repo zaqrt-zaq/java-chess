@@ -1,6 +1,5 @@
 import java.util.ArrayList;
 import java.util.List;
-import javax.swing.JOptionPane;
 
 abstract class ChessPieces {
     private int positionX;
@@ -10,7 +9,7 @@ abstract class ChessPieces {
     private static boolean isCurrentPlayerWhite = true;
     private static int[] whiteKing = {7, 4};
     private static int[] blackKing = {0, 4};
-    
+
     private static final int[][] STARTING_POSITION = {
         {0, 1, 2, 3, 4, 2, 1, 0},
         {5, 5, 5, 5, 5, 5, 5, 5},
@@ -57,9 +56,6 @@ abstract class ChessPieces {
     public static void makeMove(ChessPieces piece, int newX, int newY, ChessPieces[][] board) {
         resetEnPassantFlags();
         
-        // Store the captured piece (if any) before making the move
-        ChessPieces capturedPiece = board[newX][newY];
-        
         // Make the move
         board[piece.getPositionX()][piece.getPositionY()] = null;
         board[newX][newY] = piece;
@@ -76,10 +72,10 @@ abstract class ChessPieces {
         }
         
         isCurrentPlayerWhite = !piece.isWhite();
-        
-        if (isCheckmate(isCurrentPlayerWhite, board)) {
+
+        if (ChessPieces.isCheckmate(ChessPieces.isCurrentPlayerWhite, board)) {
             String winner = isCurrentPlayerWhite ? "Black" : "White";
-            JOptionPane.showMessageDialog(null, winner + " wins!", "Game Over", JOptionPane.INFORMATION_MESSAGE);
+            Board.board.announceWinner(winner);
         }
     }
 
@@ -110,7 +106,7 @@ abstract class ChessPieces {
         
         if (isCheckmate(isCurrentPlayerWhite, board)) {
             String winner = isCurrentPlayerWhite ? "Black" : "White";
-            JOptionPane.showMessageDialog(null, winner + " wins!", "Game Over", JOptionPane.INFORMATION_MESSAGE);
+            Board.board.announceWinner(winner);
         }
     }
 
@@ -125,17 +121,8 @@ abstract class ChessPieces {
     }
 
     private static void promotePawn(ChessPieces piece, int row, int col, ChessPieces[][] board) {
-        String[] options = {"Queen", "Rook", "Bishop", "Knight"};
-        int choice = JOptionPane.showOptionDialog(
-                null,
-                "Choose promotion:",
-                "Pawn Promotion",
-                JOptionPane.DEFAULT_OPTION,
-                JOptionPane.PLAIN_MESSAGE,
-                null,
-                options,
-                options[0]);
 
+        int choice = Board.board.chosePromotion();
         ChessPieces newPiece = switch (choice) {
             case 1 -> new Rook(row, col, piece.isWhite());
             case 2 -> new Bishop(row, col, piece.isWhite());
@@ -342,55 +329,16 @@ abstract class ChessPieces {
         return isKingInCheck(king.getPositionX(), king.getPositionY(), king.isWhite(), Board.board.getCurrentBoard());
     }
 
-    static boolean isMoveValid(ChessPieces piece, int newX, int newY) {
-        ChessPieces[][] board = Board.getInstance().getCurrentBoard();
-        boolean isValid = true;
-        ChessPieces originalPiece = board[newX][newY];
-
-        // Symuluj ruch
-        board[piece.getPositionX()][piece.getPositionY()] = null;
-        board[newX][newY] = piece;
-
-        // Sprawdź czy król nie jest szachowany po ruchu
-        int[] kingPos = getKingPosition(piece.isWhite());
-        isValid = !isKingInCheck(kingPos[0], kingPos[1], piece.isWhite(), board);
-
-        // Cofnij symulowany ruch
-        board[piece.getPositionX()][piece.getPositionY()] = piece;
-        board[newX][newY] = originalPiece;
-
-        return isValid;
-    }
-
-    public boolean isInCheck() {
-        int[] kingPos = getKingPosition(isWhite());
-        return isKingInCheck(kingPos[0], kingPos[1], isWhite(), Board.getInstance().getCurrentBoard());
-    }
-
-    public boolean isValidCastling() {
-        if (isInCheck()) {
-            return false;
-        }
-        
-        List<int[]> possibleMoves = getPossibleMoves();
-        for (int[] move : possibleMoves) {
-            if (!isKingInCheck(move[0], move[1], isWhite(), Board.getInstance().getCurrentBoard())) {
-                return true;
-            }
-        }
-        return false;
-    }
 
     protected List<int[]> validateMoves(List<int[]> moves) {
         ChessPieces[][] board = Board.getInstance().getCurrentBoard();
         moves.removeIf(move -> {
-            boolean isValid = true;
             ChessPieces originalPiece = board[move[0]][move[1]];
             board[move[0]][move[1]] = this;
             board[getPositionX()][getPositionY()] = null;
 
             int[] kingPos = getKingPosition(isWhite());
-            isValid = !isKingInCheck(kingPos[0], kingPos[1], isWhite(), board);
+            boolean isValid = !isKingInCheck(kingPos[0], kingPos[1], isWhite(), board);
 
             board[getPositionX()][getPositionY()] = this;
             board[move[0]][move[1]] = originalPiece;
@@ -402,9 +350,6 @@ abstract class ChessPieces {
 
     protected boolean canSkipCheck() {
         int[] kingPos = getKingPosition(isWhite());
-        if (isKingInCheck(kingPos[0], kingPos[1], isWhite(), Board.getInstance().getCurrentBoard())) {
-            return false;
-        }
-        return true;
+        return !isKingInCheck(kingPos[0], kingPos[1], isWhite(), Board.getInstance().getCurrentBoard());
     }
 }

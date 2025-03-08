@@ -29,7 +29,7 @@ public class King extends ChessPieces {
     }
 
     private boolean canCastle(ChessPieces piece) {
-        if (!(piece instanceof Rook rook) || piece.hasMoved() || this.hasMoved()) return false;
+        if (!(piece instanceof Rook) || piece.hasMoved() || this.hasMoved()) return false;
         if (isKingInCheck(this)) return false;
 
         int step = (piece.getPositionY() == 7) ? 1 : -1;

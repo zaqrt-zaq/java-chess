@@ -1,7 +1,5 @@
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.util.List;
@@ -32,32 +30,7 @@ public class Board extends JFrame {
         setSize(600, 600);
         
         // Create menu bar
-        JMenuBar menuBar = new JMenuBar();
-        
-        // Game menu
-        JMenu gameMenu = new JMenu("Game");
-        JMenuItem newGame = new JMenuItem("New Game");
-        JMenuItem exit = new JMenuItem("Exit");
-        
-        newGame.addActionListener(e -> resetGame());
-        exit.addActionListener(e -> System.exit(0));
-        
-        gameMenu.add(newGame);
-        gameMenu.addSeparator();
-        gameMenu.add(exit);
-        
-        // Help menu
-        JMenu helpMenu = new JMenu("Help");
-        JMenuItem about = new JMenuItem("About");
-        about.addActionListener(e -> 
-            JOptionPane.showMessageDialog(this,
-                "Chess Game\nVersion 1.0\nCreated by zaqrt",
-                "About",
-                JOptionPane.INFORMATION_MESSAGE));
-        helpMenu.add(about);
-        
-        menuBar.add(gameMenu);
-        menuBar.add(helpMenu);
+        JMenuBar menuBar = getBar();
         setJMenuBar(menuBar);
         
         // Game board
@@ -85,6 +58,36 @@ public class Board extends JFrame {
         }
         createActionListeners();
         setVisible(true);
+    }
+
+    private JMenuBar getBar() {
+        JMenuBar menuBar = new JMenuBar();
+
+        // Game menu
+        JMenu gameMenu = new JMenu("Game");
+        JMenuItem newGame = new JMenuItem("New Game");
+        JMenuItem exit = new JMenuItem("Exit");
+
+        newGame.addActionListener(e -> resetGame());
+        exit.addActionListener(e -> System.exit(0));
+
+        gameMenu.add(newGame);
+        gameMenu.addSeparator();
+        gameMenu.add(exit);
+
+        // Help menu
+        JMenu helpMenu = new JMenu("Help");
+        JMenuItem about = new JMenuItem("About");
+        about.addActionListener(e -> 
+            JOptionPane.showMessageDialog(this,
+                "Chess Game\nVersion 1.0\nCreated by zaqrt",
+                "About",
+                JOptionPane.INFORMATION_MESSAGE));
+        helpMenu.add(about);
+
+        menuBar.add(gameMenu);
+        menuBar.add(helpMenu);
+        return menuBar;
     }
 
     private void initializeGame() {
@@ -136,13 +139,14 @@ public class Board extends JFrame {
                 currentPieceSelected = null;
                 clearHighlights();
                 updateBoardUI();
-            } else if (currentPosition[row][col] == null || 
+            } else if (grid[row][col].getText().isEmpty() ||
                       currentPosition[row][col].isWhite() != ChessPieces.isCurrentPlayerWhite()) {
                 // Jeśli kliknięto na puste pole lub figurę przeciwnika, a nie jest to prawidłowy ruch
                 currentPieceSelected = null;
                 clearHighlights();
             }
         }
+
     }
 
     private boolean isSpecialMove(ChessPieces piece, int row, int col) {
@@ -164,7 +168,7 @@ public class Board extends JFrame {
 
     private void highlightPossibleMoves(List<int[]> moves) {
         for (int[] move : moves) {
-            if (currentPosition[move[0]][move[1]] != null) {
+            if (!grid[move[0]][move[1]].getText().isEmpty()) {
                 grid[move[0]][move[1]].setBackground(Color.RED);
             } else {
                 grid[move[0]][move[1]].setBackground(Color.YELLOW);
@@ -190,5 +194,21 @@ public class Board extends JFrame {
 
     public ChessPieces[][] getCurrentBoard() {
         return currentPosition;
+    }
+
+    public void announceWinner(String winner){
+        JOptionPane.showMessageDialog(null, winner + " wins!", "Game Over", JOptionPane.INFORMATION_MESSAGE);
+    }
+    public int chosePromotion(){
+        String[] options = {"Queen", "Rook", "Bishop", "Knight"};
+        return JOptionPane.showOptionDialog(
+                null,
+                "Choose promotion:",
+                "Pawn Promotion",
+                JOptionPane.DEFAULT_OPTION,
+                JOptionPane.PLAIN_MESSAGE,
+                null,
+                options,
+                options[0]);
     }
 }

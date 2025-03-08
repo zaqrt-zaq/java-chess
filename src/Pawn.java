@@ -17,16 +17,6 @@ public class Pawn extends ChessPieces {
         this.canBeEnPassantCaptured = canBeEnPassantCaptured;
     }
 
-    public boolean isCanBeEnPassantCaptured() {
-        return canBeEnPassantCaptured;
-    }
-    
-    public void captureEnPassant(int positionX, int positionY) {
-        ChessPieces[][] board = Board.getInstance().getCurrentBoard();
-        board[getPositionX()][positionY] = null;
-        ChessPieces.makeMove(this, positionX, positionY, board);
-    }
-
     @Override
     public List<int[]> getPossibleMoves() {
         ArrayList<int[]> possibleMoves = new ArrayList<>();
@@ -74,11 +64,7 @@ public class Pawn extends ChessPieces {
     @Override
     protected void movePiece(int x, int y) {
         // Set canBeEnPassantCaptured to true if pawn moves two squares
-        if (Math.abs(this.getPositionX() - x) == 2) {
-            this.canBeEnPassantCaptured = true;
-        } else {
-            this.canBeEnPassantCaptured = false;
-        }
+        this.canBeEnPassantCaptured = Math.abs(this.getPositionX() - x) == 2;
         super.movePiece(x, y);
     }
 }
