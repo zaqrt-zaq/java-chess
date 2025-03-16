@@ -1,7 +1,11 @@
+package Pieces;
+
 import java.util.ArrayList;
 import java.util.List;
+import BoardControl.Board;
 
-abstract class ChessPieces {
+
+public abstract class ChessPieces {
     private int positionX;
     private int positionY;
     private final boolean isWhite;
@@ -75,7 +79,7 @@ abstract class ChessPieces {
 
         if (ChessPieces.isCheckmate(ChessPieces.isCurrentPlayerWhite, board)) {
             String winner = isCurrentPlayerWhite ? "Black" : "White";
-            Board.board.announceWinner(winner);
+            BoardControl.Board.getInstance().announceWinner(winner);
         }
     }
 
@@ -106,7 +110,7 @@ abstract class ChessPieces {
         
         if (isCheckmate(isCurrentPlayerWhite, board)) {
             String winner = isCurrentPlayerWhite ? "Black" : "White";
-            Board.board.announceWinner(winner);
+            Board.getInstance().announceWinner(winner);
         }
     }
 
@@ -122,7 +126,7 @@ abstract class ChessPieces {
 
     private static void promotePawn(ChessPieces piece, int row, int col, ChessPieces[][] board) {
 
-        int choice = Board.board.chosePromotion();
+        int choice = Board.getInstance().chosePromotion();
         ChessPieces newPiece = switch (choice) {
             case 1 -> new Rook(row, col, piece.isWhite());
             case 2 -> new Bishop(row, col, piece.isWhite());
@@ -137,7 +141,7 @@ abstract class ChessPieces {
         int[] kingPosition = isWhite ? whiteKing : blackKing;
         King king = (King) board[kingPosition[0]][kingPosition[1]];
 
-        if (!isKingInCheck(king.getPositionX(), king.getPositionY(), king.isWhite(), board)) {
+        if (!isSquareUnderAttack(king.getPositionX(), king.getPositionY(), king.isWhite(), board)) {
             return false;
         }
 
@@ -182,7 +186,7 @@ abstract class ChessPieces {
 
         List<int[]> moves = new ArrayList<>();
 
-        ChessPieces[][] board = Board.board.getCurrentBoard();
+        ChessPieces[][] board = Board.getInstance().getCurrentBoard();
 
         for (int[] direction : directions) {
             for (int j = 1; j <= (isLimited ? 1 : 7); j++) {
@@ -249,86 +253,87 @@ abstract class ChessPieces {
         blackKing = new int[]{0, 4};
     }
 
-    static boolean isKingInCheck(int x, int y, boolean isKingWhite, ChessPieces[][] board) {
-        int pawnDirection = isKingWhite ? -1 : 1;
+    static boolean isSquareUnderAttack(int x, int y, boolean isPlayerWhite, ChessPieces[][] board) {
+        int pawnDirection = isPlayerWhite ? -1 : 1;
 
         // Sprawdzenie ataku przez skoczka
         for (int[] move : Knight.moves) {
             int newX = x + move[0];
             int newY = y + move[1];
-            if (newX >= 0 && newX < 8 && newY >= 0 && newY < 8) {
+            if (isValidSquare(newX, newY)) {
                 ChessPieces piece = board[newX][newY];
-                if (piece instanceof Knight && piece.isWhite() != isKingWhite) {
+                if (piece instanceof Knight && piece.isWhite() != isPlayerWhite) {
                     return true;
                 }
             }
         }
 
         // Sprawdzenie ataku przez pionki
-        if ((x > 0 && y + pawnDirection >= 0 && y + pawnDirection < 8 &&
-                board[x + pawnDirection][y + 1] instanceof Pawn &&
-                board[x + pawnDirection][y + 1].isWhite() != isKingWhite) ||
-                (x < 7 && y + pawnDirection >= 0 && y + pawnDirection < 8 &&
-                        board[x + pawnDirection][y - 1] instanceof Pawn &&
-                        board[x + pawnDirection][y - 1].isWhite() != isKingWhite)) {
+        if ((isValidSquare(x + pawnDirection, y - 1) &&
+                board[x + pawnDirection][y - 1] instanceof Pawn &&
+                board[x + pawnDirection][y - 1].isWhite() != isPlayerWhite) ||
+                (isValidSquare(x + pawnDirection, y + 1) &&
+                        board[x + pawnDirection][y + 1] instanceof Pawn &&
+                        board[x + pawnDirection][y + 1].isWhite() != isPlayerWhite)) {
             return true;
         }
 
         // Sprawdzenie ataku przez wieżę i królową
-        for (int[] direction : Rook.moves) {
-            for (int i = 1; i < 8; i++) {
-                int newX = x + direction[0] * i;
-                int newY = y + direction[1] * i;
-
-                if (newX < 0 || newX >= 8 || newY < 0 || newY >= 8) break;
-
-                ChessPieces targetPiece = board[newX][newY];
-                if (targetPiece == null) continue;
-                if (targetPiece.isWhite() == isKingWhite) break; // Zatrzymaj, jeśli napotkasz swoją figurę
-                if (targetPiece instanceof Rook || targetPiece instanceof Queen) {
-                    return true; // Król jest w szachu
-                }
-                break; // Zatrzymaj, jeśli napotkasz inną figurę
-            }
+        if (isSquareAttackedByX(x, y, isPlayerWhite, Rook.moves, board, Rook.class, Queen.class)) {
+            return true;
         }
 
         // Sprawdzenie ataku przez gońca i królową
-        for (int[] direction : Bishop.moves) {
-            for (int i = 1; i < 8; i++) {
-                int newX = x + direction[0] * i;
-                int newY = y + direction[1] * i;
-
-                if (newX < 0 || newX >= 8 || newY < 0 || newY >= 8) break;
-
-                ChessPieces targetPiece = board[newX][newY];
-                if (targetPiece == null) continue;
-                if (targetPiece.isWhite() == isKingWhite) break; // Zatrzymaj, jeśli napotkasz swoją figurę
-                if (targetPiece instanceof Bishop || targetPiece instanceof Queen) {
-                    return true; // Król jest w szachu
-                }
-                break; // Zatrzymaj, jeśli napotkasz inną figurę
-            }
+        if (isSquareAttackedByX(x, y, isPlayerWhite, Bishop.moves, board, Bishop.class, Queen.class)) {
+            return true;
         }
 
         // Sprawdzenie ataku przez króla
         for (int[] move : King.moves) {
             int newX = x + move[0];
             int newY = y + move[1];
-            if (newX >= 0 && newX < 8 && newY >= 0 && newY < 8) {
+            if (isValidSquare(newX, newY)) {
                 ChessPieces targetPiece = board[newX][newY];
-                if (targetPiece instanceof King && targetPiece.isWhite() != isKingWhite) {
-                    return true; // Król przeciwnika atakuje
+                if (targetPiece instanceof King && targetPiece.isWhite() != isPlayerWhite) {
+                    return true;
                 }
             }
         }
 
-        return false; // Król nie jest w szachu
+        return false;
     }
 
-    static boolean isKingInCheck(King king) {
-        return isKingInCheck(king.getPositionX(), king.getPositionY(), king.isWhite(), Board.board.getCurrentBoard());
+    private static boolean isSquareAttackedByX(int x, int y, boolean isKingWhite, int[][] directions, ChessPieces[][] board, Class<?>... attackingPieces) {
+        for (int[] direction : directions) {
+            for (int i = 1; i < 8; i++) {
+                int newX = x + direction[0] * i;
+                int newY = y + direction[1] * i;
+
+                if (!isValidSquare(newX, newY)) break;
+
+                ChessPieces targetPiece = board[newX][newY];
+                if (targetPiece == null) continue;
+                if (targetPiece.isWhite() == isKingWhite) break;
+
+                for (Class<?> attackingPiece : attackingPieces) {
+                    if (attackingPiece.isInstance(targetPiece)) {
+                        return true;
+                    }
+                }
+                break;
+            }
+        }
+        return false;
     }
 
+    static boolean isKingUnderAttack(King king) {
+        ChessPieces[][] board = Board.getInstance().getCurrentBoard();
+        return isSquareUnderAttack(king.getPositionX(), king.getPositionY(), king.isWhite(), board);
+    }
+
+    public static boolean isValidSquare(int x, int y) {
+        return x >= 0 && x < 8 && y >= 0 && y < 8;
+    }
 
     protected List<int[]> validateMoves(List<int[]> moves) {
         ChessPieces[][] board = Board.getInstance().getCurrentBoard();
@@ -338,7 +343,7 @@ abstract class ChessPieces {
             board[getPositionX()][getPositionY()] = null;
 
             int[] kingPos = getKingPosition(isWhite());
-            boolean isValid = !isKingInCheck(kingPos[0], kingPos[1], isWhite(), board);
+            boolean isValid = !isSquareUnderAttack(kingPos[0], kingPos[1], isWhite(), board);
 
             board[getPositionX()][getPositionY()] = this;
             board[move[0]][move[1]] = originalPiece;
@@ -349,7 +354,13 @@ abstract class ChessPieces {
     }
 
     protected boolean canSkipCheck() {
+        ChessPieces[][] board = Board.getInstance().getCurrentBoard();
+        ChessPieces originalPiece = this;
+        board[this.positionX][this.positionY] = null;
         int[] kingPos = getKingPosition(isWhite());
-        return !isKingInCheck(kingPos[0], kingPos[1], isWhite(), Board.getInstance().getCurrentBoard());
+        boolean canSkipCheck = !isKingUnderAttack((King) board[kingPos[0]][kingPos[1]]);
+        board[this.positionX][this.positionY]=this;
+        return canSkipCheck;
+
     }
 }

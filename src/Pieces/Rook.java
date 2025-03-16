@@ -1,3 +1,5 @@
+package Pieces;
+
 import java.util.List;
 
 public class Rook extends ChessPieces {
@@ -17,7 +19,6 @@ public class Rook extends ChessPieces {
     @Override
     public List<int[]> getPossibleMoves() {
         if (this.canSkipCheck()) return moveByMore(Rook.moves);
-
         return validateMoves(moveByMore(Rook.moves));
     }
 }

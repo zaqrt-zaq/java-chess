@@ -1,17 +1,22 @@
+package BoardControl;
+
+import Pieces.ChessPieces;
+import Pieces.King;
+import Pieces.Pawn;
+
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.util.List;
 
-@SuppressWarnings("ClassEscapesDefinedScope")
 public class Board extends JFrame {
-    static Board board;
+    private static Board board;
     private JButton[][] grid;
     private ChessPieces[][] currentPosition;
     private ChessPieces currentPieceSelected;
 
-    static Board getInstance() {
+    public static Board getInstance() {
         if (board == null) {
             board = new Board();
         }
@@ -108,12 +113,12 @@ public class Board extends JFrame {
             for (int j = 0; j < 8; j++) {
                 final int row = i;
                 final int col = j;
-                grid[i][j].addActionListener(e -> handleMove(row, col));
+                grid[i][j].addActionListener(e -> handleClick(row, col));
             }
         }
     }
 
-    private void handleMove(int row, int col) {
+    private void handleClick(int row, int col) {
         // Jeśli kliknięto na nową figurę właściwego koloru
         if (currentPosition[row][col] != null && 
             currentPosition[row][col].isWhite() == ChessPieces.isCurrentPlayerWhite()) {
@@ -132,19 +137,18 @@ public class Board extends JFrame {
             if (isSpecialMove(currentPieceSelected, row, col)) {
                 ChessPieces.makeSpecialMove(currentPieceSelected, row, col, currentPosition);
                 currentPieceSelected = null;
-                clearHighlights();
                 updateBoardUI();
             } else if (ChessPieces.isValidMove(currentPieceSelected, row, col)) {
                 ChessPieces.makeMove(currentPieceSelected, row, col, currentPosition);
                 currentPieceSelected = null;
-                clearHighlights();
                 updateBoardUI();
             } else if (grid[row][col].getText().isEmpty() ||
                       currentPosition[row][col].isWhite() != ChessPieces.isCurrentPlayerWhite()) {
                 // Jeśli kliknięto na puste pole lub figurę przeciwnika, a nie jest to prawidłowy ruch
                 currentPieceSelected = null;
-                clearHighlights();
             }
+            clearHighlights();
+
         }
 
     }
@@ -200,11 +204,11 @@ public class Board extends JFrame {
         JOptionPane.showMessageDialog(null, winner + " wins!", "Game Over", JOptionPane.INFORMATION_MESSAGE);
     }
     public int chosePromotion(){
-        String[] options = {"Queen", "Rook", "Bishop", "Knight"};
+        String[] options = {"Pieces.Queen", "Pieces.Rook", "Pieces.Bishop", "Pieces.Knight"};
         return JOptionPane.showOptionDialog(
                 null,
                 "Choose promotion:",
-                "Pawn Promotion",
+                "Pieces.Pawn Promotion",
                 JOptionPane.DEFAULT_OPTION,
                 JOptionPane.PLAIN_MESSAGE,
                 null,

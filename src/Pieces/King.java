@@ -1,5 +1,8 @@
+package Pieces;
+
 import java.util.ArrayList;
 import java.util.List;
+import BoardControl.Board;
 
 public class King extends ChessPieces {
     public King(int positionX, int positionY, boolean isWhite) {
@@ -30,14 +33,14 @@ public class King extends ChessPieces {
 
     private boolean canCastle(ChessPieces piece) {
         if (!(piece instanceof Rook) || piece.hasMoved() || this.hasMoved()) return false;
-        if (isKingInCheck(this)) return false;
+        if (isKingUnderAttack(this)) return false;
 
         int step = (piece.getPositionY() == 7) ? 1 : -1;
 
         int y = getPositionY() + step;
         while(y != piece.getPositionY()){
             if (Board.getInstance().getCurrentBoard()[getPositionX()][y] != null) return false;
-            if (isKingInCheck(this.getPositionX(),y,this.isWhite(),Board.getInstance().getCurrentBoard())) return false;
+            if (isSquareUnderAttack(this.getPositionX(),y,this.isWhite(), Board.getInstance().getCurrentBoard())) return false;
             y+=step;
         }
 

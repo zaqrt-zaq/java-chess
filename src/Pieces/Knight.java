@@ -1,3 +1,5 @@
+package Pieces;
+
 import java.util.List;
 
 public class Knight extends ChessPieces {

@@ -1,3 +1,4 @@
+import BoardControl.Board;
 
 public class Chess {
     public static void main(String[] args) {
