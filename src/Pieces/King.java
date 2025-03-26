@@ -21,42 +21,38 @@ public class King extends ChessPieces {
 
 
     public List<int[]> getPossibleMoves() {
+        ChessBoard chessBoard = ChessBoard.getChessBoard();
 
         ArrayList<int[]> possibleMoves = new ArrayList<>(this.moveByOne(King.moves));
-        if (canCastle(Board.getInstance().getCurrentBoard()[this.getPositionX()][7]))
+        if (chessBoard.isCastlePossible(isWhite()?Castles.WHITE_LONG_CASTLE:Castles.BLACK_LONG_CASTLE))
             possibleMoves.add(new int[]{this.getPositionX(), this.getPositionY() + 2});
-        if (canCastle(Board.getInstance().getCurrentBoard()[this.getPositionX()][0]))
+        if (chessBoard.isCastlePossible(isWhite()?Castles.WHITE_SORT_CASTLE:Castles.BACK_SORT_CASTLE))
             possibleMoves.add(new int[]{this.getPositionX(), this.getPositionY() - 2});
 
         return validateMoves(possibleMoves);
     }
 
-    private boolean canCastle(ChessPieces piece) {
-        if (!(piece instanceof Rook) || piece.hasMoved() || this.hasMoved()) return false;
-        if (isKingUnderAttack(this)) return false;
-
-        int step = (piece.getPositionY() == 7) ? 1 : -1;
-
-        int y = getPositionY() + step;
-        while(y != piece.getPositionY()){
-            if (Board.getInstance().getCurrentBoard()[getPositionX()][y] != null) return false;
-            if (isSquareUnderAttack(this.getPositionX(),y,this.isWhite(), Board.getInstance().getCurrentBoard())) return false;
-            y+=step;
-        }
-
-        return true;
-    }
-
-    public void castle(boolean isLongCastle) {
-        int rookCol = isLongCastle ? 0 : 7;
-        ChessPieces rook = Board.getInstance().getCurrentBoard()[getPositionX()][rookCol];
-        
-        ChessPieces.makeMove(rook, this.getPositionX(), isLongCastle ? 3 : 5, Board.getInstance().getCurrentBoard());
-        ChessPieces.makeMove(this, this.getPositionX(), isLongCastle ? 2 : 6, Board.getInstance().getCurrentBoard());
-    }
     @Override
     protected void movePiece(int x, int y) {
         super.movePiece(x, y);
-        ChessPieces.updateKingPosition(isWhite(), new int[]{x, y});
+        ChessBoard.getChessBoard().updateKingPosition(this);
+    }
+
+    @Override
+    public char getFENSymbol() {
+        return isWhite()?'K':'k';
+    }
+
+    @Override
+    protected boolean canSkipCheck() {
+        return false;
+    }
+
+    @Override
+    protected List<int[]> validateMoves(List<int[]> moves) {
+        moves.removeIf(
+                move -> ChessBoard.getChessBoard().isSquareUnderAttack(move[0],move[1],isWhite())
+        );
+        return moves;
     }
 }

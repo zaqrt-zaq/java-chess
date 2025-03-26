@@ -24,4 +24,9 @@ public class Queen extends ChessPieces {
 
         return validateMoves(moves);
     }
+
+    @Override
+    public char getFENSymbol() {
+        return isWhite()?'Q':'q';
+    }
 }

@@ -21,4 +21,9 @@ public class Bishop extends ChessPieces {
 
         return validateMoves(moveByMore(Bishop.moves));
     }
+
+    @Override
+    public char getFENSymbol() {
+        return isWhite() ? 'B' : 'b';
+    }
 }

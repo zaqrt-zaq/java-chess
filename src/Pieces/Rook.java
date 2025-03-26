@@ -21,4 +21,9 @@ public class Rook extends ChessPieces {
         if (this.canSkipCheck()) return moveByMore(Rook.moves);
         return validateMoves(moveByMore(Rook.moves));
     }
+
+    @Override
+    public char getFENSymbol() {
+        return isWhite() ? 'R' : 'r';
+    }
 }

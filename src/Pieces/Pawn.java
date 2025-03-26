@@ -2,7 +2,6 @@ package Pieces;
 
 import java.util.ArrayList;
 import java.util.List;
-import BoardControl.Board;
 
 public class Pawn extends ChessPieces {
     public Pawn(int positionX, int positionY, boolean isWhite) {
@@ -14,59 +13,52 @@ public class Pawn extends ChessPieces {
         return '♙';
     }
 
-    private boolean canBeEnPassantCaptured = false;
-
-    public void setCanBeEnPassantCaptured(boolean canBeEnPassantCaptured) {
-        this.canBeEnPassantCaptured = canBeEnPassantCaptured;
-    }
 
     @Override
     public List<int[]> getPossibleMoves() {
         ArrayList<int[]> possibleMoves = new ArrayList<>();
         int direction = isWhite() ? -1 : 1;
         int newX = getPositionX() + direction;
-        ChessPieces[][] board = Board.getInstance().getCurrentBoard();
+        ChessBoard chessBoard = ChessBoard.getChessBoard();
 
-        if (ChessPieces.isValidSquare(newX, this.getPositionY())) {
+        if (ChessBoard.isValidSquare(newX, this.getPositionY()))
             possibleMoves.add(new int[]{newX, this.getPositionY()});
-        }
-        if (!hasMoved() && board[getPositionX() + 2 * direction][getPositionY()] == null) {
+        if (!hasMoved() && chessBoard.isSquareEmpty(positionX+2*direction, positionY))
             possibleMoves.add(new int[]{getPositionX() + 2 * direction, getPositionY()});
-        }
-        addDiagonalCaptures(possibleMoves, newX, direction, board);
-        addEnPassantCaptures(possibleMoves, newX, direction, board);
 
-        if(this.canSkipCheck()) {
+        addDiagonalCaptures(possibleMoves, newX);
+        addEnPassantCaptures(possibleMoves, newX);
+
+        if(this.canSkipCheck())
             return possibleMoves;
-        }
+
 
         return validateMoves(possibleMoves);
     }
 
-    private void addDiagonalCaptures(List<int[]> possibleMoves, int newX, int direction, ChessPieces[][] board) {
+    private void addDiagonalCaptures(List<int[]> possibleMoves, int newX) {
         for (int i = -1; i <= 1; i += 2) {
             int newY = getPositionY() + i;
-            if (!(isValidSquare(newX, newY)))
+            if (!(ChessBoard.isValidSquare(newX, newY)))
                 continue;
 
-            ChessPieces targetPiece = board[newX][newY];
-            if (targetPiece != null && targetPiece.isWhite() != isWhite()) {
+            if (ChessBoard.getChessBoard().isPieceTheSameColorAs(this,newX,newY)) {
                 possibleMoves.add(new int[]{newX, newY});
             }
         }
     }
 
-    private void addEnPassantCaptures(List<int[]> possibleMoves, int newX, int direction, ChessPieces[][] board) {
-        if (!(getPositionX() == (isWhite() ? 3 : 4)))
+    private void addEnPassantCaptures(List<int[]> possibleMoves, int newX) {
+        Pawn pawn = (Pawn) ChessBoard.getChessBoard().getPossibleEnPassant();
+        if (pawn == null || pawn.getPositionX() != this.getPositionX()){
             return;
-        for (int i = -1; i <= 1; i += 2) {
-            int newY = getPositionY() + i;
-            ChessPieces adjacentPiece = board[getPositionX()][newY];
-            if (adjacentPiece instanceof Pawn &&
-                    adjacentPiece.isWhite() != isWhite() &&
-                    ((Pawn) adjacentPiece).canBeEnPassantCaptured) {
-                possibleMoves.add(new int[]{newX, newY});
-            }
+        }
+
+        if (this.getPositionY()+1==pawn.getPositionY()){
+            possibleMoves.add(new int[]{newX, this.getPositionY()+1});
+        }
+        if (this.getPositionY()-1==pawn.getPositionY()){
+            possibleMoves.add(new int[]{newX, this.getPositionY()+1});
         }
 
     }
@@ -74,7 +66,12 @@ public class Pawn extends ChessPieces {
     @Override
     protected void movePiece(int x, int y) {
         // Set canBeEnPassantCaptured to true if pawn moves two squares
-        this.canBeEnPassantCaptured = Math.abs(this.getPositionX() - x) == 2;
+        if (Math.abs(this.getPositionX() - x) == 2) ChessBoard.getChessBoard().setPossibleEnPassant(this);
         super.movePiece(x, y);
+    }
+
+    @Override
+    public char getFENSymbol() {
+        return isWhite()?'P':'p';
     }
 }

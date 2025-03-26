@@ -1,5 +1,6 @@
 package BoardControl;
 
+import Pieces.ChessBoard;
 import Pieces.ChessPieces;
 import Pieces.King;
 import Pieces.Pawn;
@@ -13,8 +14,8 @@ import java.util.List;
 public class Board extends JFrame {
     private static Board board;
     private JButton[][] grid;
-    private ChessPieces[][] currentPosition;
     private ChessPieces currentPieceSelected;
+    private ChessBoard chessBoard;
 
     public static Board getInstance() {
         if (board == null) {
@@ -50,8 +51,7 @@ public class Board extends JFrame {
         this.add(panel);
         
         grid = new JButton[8][8];
-        currentPosition = new ChessPieces[8][8];
-        
+
         for (int i = 0; i < 8; i++) {
             for (int j = 0; j < 8; j++) {
                 grid[i][j] = new JButton();
@@ -95,15 +95,16 @@ public class Board extends JFrame {
         return menuBar;
     }
 
-    private void initializeGame() {
-        currentPosition = ChessPieces.initializeBoard();
+    private void    initializeGame() {
+        chessBoard = ChessBoard.getChessBoard();
         updateBoardUI();
     }
 
     private void updateBoardUI() {
+        String[][] stingChessBoard = chessBoard.getBoardToString();
         for (int i = 0; i < 8; i++) {
             for (int j = 0; j < 8; j++) {
-                grid[i][j].setText(currentPosition[i][j] != null ? currentPosition[i][j].toString() : "");
+                grid[i][j].setText(stingChessBoard[i][j]);
             }
         }
     }
@@ -119,52 +120,37 @@ public class Board extends JFrame {
     }
 
     private void handleClick(int row, int col) {
-        // Jeśli kliknięto na nową figurę właściwego koloru
-        if (currentPosition[row][col] != null && 
-            currentPosition[row][col].isWhite() == ChessPieces.isCurrentPlayerWhite()) {
-            // Wyczyść poprzednie zaznaczenie
+        if (chessBoard.doesPieceBelongToCurrentPlayer(row,col)) {
             clearHighlights();
-            // Zaznacz nową figurę
-            currentPieceSelected = currentPosition[row][col];
+
+            currentPieceSelected = chessBoard.getChessPieceFromPosition(row,col);
+
             List<int[]> moves = currentPieceSelected.getPossibleMoves();
             highlightPossibleMoves(moves);
             highlightSpecialMoves(currentPieceSelected, moves);
             return;
         }
 
-        // Jeśli figura jest zaznaczona i kliknięto na pole ruchu
         if (currentPieceSelected != null) {
-            if (isSpecialMove(currentPieceSelected, row, col)) {
-                ChessPieces.makeSpecialMove(currentPieceSelected, row, col, currentPosition);
+            if (ChessBoard.isSpecialMove(currentPieceSelected, row, col)) {
+                chessBoard.makeSpecialMove(currentPieceSelected, row, col);
                 currentPieceSelected = null;
                 updateBoardUI();
-            } else if (ChessPieces.isValidMove(currentPieceSelected, row, col)) {
-                ChessPieces.makeMove(currentPieceSelected, row, col, currentPosition);
+            } else if (ChessBoard.isValidMove(currentPieceSelected, row, col)) {
+                chessBoard.makeMove(currentPieceSelected, row, col);
                 currentPieceSelected = null;
                 updateBoardUI();
-            } else if (grid[row][col].getText().isEmpty() ||
-                      currentPosition[row][col].isWhite() != ChessPieces.isCurrentPlayerWhite()) {
-                // Jeśli kliknięto na puste pole lub figurę przeciwnika, a nie jest to prawidłowy ruch
+            } else if (!chessBoard.doesPieceBelongToCurrentPlayer(row, col)) {
                 currentPieceSelected = null;
             }
             clearHighlights();
-
         }
 
-    }
-
-    private boolean isSpecialMove(ChessPieces piece, int row, int col) {
-        if (piece instanceof King) {
-            return Math.abs(col - piece.getPositionY()) == 2;
-        } else if (piece instanceof Pawn) {
-            return col != piece.getPositionY() && currentPosition[row][col] == null;
-        }
-        return false;
     }
 
     private void highlightSpecialMoves(ChessPieces piece, List<int[]> moves) {
         for (int[] move : moves) {
-            if (isSpecialMove(piece, move[0], move[1])) {
+            if (ChessBoard.isSpecialMove(piece, move[0], move[1])) {
                 grid[move[0]][move[1]].setBackground(Color.GREEN);
             }
         }
@@ -172,7 +158,7 @@ public class Board extends JFrame {
 
     private void highlightPossibleMoves(List<int[]> moves) {
         for (int[] move : moves) {
-            if (!grid[move[0]][move[1]].getText().isEmpty()) {
+            if (!chessBoard.isSquareEmpty(move[0], move[1])) {
                 grid[move[0]][move[1]].setBackground(Color.RED);
             } else {
                 grid[move[0]][move[1]].setBackground(Color.YELLOW);
@@ -191,14 +177,11 @@ public class Board extends JFrame {
     private void resetGame() {
         currentPieceSelected = null;
         clearHighlights();
-        ChessPieces.resetGame();
-        currentPosition = ChessPieces.initializeBoard();
+        chessBoard.resetGameState();
         updateBoardUI();
     }
 
-    public ChessPieces[][] getCurrentBoard() {
-        return currentPosition;
-    }
+
 
     public void announceWinner(String winner){
         JOptionPane.showMessageDialog(null, winner + " wins!", "Game Over", JOptionPane.INFORMATION_MESSAGE);

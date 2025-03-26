@@ -23,4 +23,8 @@ public class Knight extends ChessPieces {
         return validateMoves(moveByOne(Knight.moves));
     }
 
+    @Override
+    public char getFENSymbol() {
+        return isWhite() ? 'N' : 'n';
+    }
 }
