@@ -21,7 +21,7 @@ public class Pawn extends ChessPieces {
         int newX = getPositionX() + direction;
         ChessBoard chessBoard = ChessBoard.getChessBoard();
 
-        if (ChessBoard.isValidSquare(newX, this.getPositionY()))
+        if (chessBoard.isSquareEmpty(newX, this.getPositionY()))
             possibleMoves.add(new int[]{newX, this.getPositionY()});
         if (!hasMoved() && chessBoard.isSquareEmpty(positionX+2*direction, positionY))
             possibleMoves.add(new int[]{getPositionX() + 2 * direction, getPositionY()});
@@ -39,10 +39,10 @@ public class Pawn extends ChessPieces {
     private void addDiagonalCaptures(List<int[]> possibleMoves, int newX) {
         for (int i = -1; i <= 1; i += 2) {
             int newY = getPositionY() + i;
-            if (!(ChessBoard.isValidSquare(newX, newY)))
+            if (!(ChessBoard.isValidSquare(newX, newY)) || ChessBoard.getChessBoard().isSquareEmpty(newX, newY))
                 continue;
 
-            if (ChessBoard.getChessBoard().isPieceTheSameColorAs(this,newX,newY)) {
+            if (!ChessBoard.getChessBoard().isPieceTheSameColorAs(this,newX,newY)) {
                 possibleMoves.add(new int[]{newX, newY});
             }
         }

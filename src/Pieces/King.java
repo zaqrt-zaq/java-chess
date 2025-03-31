@@ -2,7 +2,6 @@ package Pieces;
 
 import java.util.ArrayList;
 import java.util.List;
-import BoardControl.Board;
 
 public class King extends ChessPieces {
     public King(int positionX, int positionY, boolean isWhite) {
@@ -23,10 +22,12 @@ public class King extends ChessPieces {
     public List<int[]> getPossibleMoves() {
         ChessBoard chessBoard = ChessBoard.getChessBoard();
 
-        ArrayList<int[]> possibleMoves = new ArrayList<>(this.moveByOne(King.moves));
-        if (chessBoard.isCastlePossible(isWhite()?Castles.WHITE_LONG_CASTLE:Castles.BLACK_LONG_CASTLE))
+        List<int[]> possibleMoves = new ArrayList<>(this.moveByOne(King.moves));
+        if (chessBoard.canPrefCastle(
+                isWhite() ? Castles.WHITE_LONG_CASTLE : Castles.BLACK_LONG_CASTLE,this))
             possibleMoves.add(new int[]{this.getPositionX(), this.getPositionY() + 2});
-        if (chessBoard.isCastlePossible(isWhite()?Castles.WHITE_SORT_CASTLE:Castles.BACK_SORT_CASTLE))
+        if (chessBoard.canPrefCastle(
+                isWhite() ? Castles.WHITE_SHORT_CASTLE : Castles.BLACK_SHORT_CASTLE,this))
             possibleMoves.add(new int[]{this.getPositionX(), this.getPositionY() - 2});
 
         return validateMoves(possibleMoves);
@@ -35,7 +36,11 @@ public class King extends ChessPieces {
     @Override
     protected void movePiece(int x, int y) {
         super.movePiece(x, y);
-        ChessBoard.getChessBoard().updateKingPosition(this);
+        ChessBoard chessBoard = ChessBoard.getChessBoard();
+        chessBoard.updateKingPosition(this);
+        chessBoard.disableCastle(isWhite() ? Castles.WHITE_LONG_CASTLE:Castles.BLACK_LONG_CASTLE);
+        chessBoard.disableCastle(isWhite() ? Castles.WHITE_SHORT_CASTLE:Castles.BLACK_SHORT_CASTLE);
+
     }
 
     @Override

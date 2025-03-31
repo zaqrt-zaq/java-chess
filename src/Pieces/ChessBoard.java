@@ -1,25 +1,24 @@
 package Pieces;
 
-import BoardControl.Board;
+import UIComponents.Board;
 
 import java.util.Arrays;
 import java.util.List;
 
-
 public class ChessBoard {
-    public static final int SIZE = 8;
-
     private final int[] whiteKing;
     private final int[] blackKing;
     private ChessPieces possibleEnPassant;
-    private final boolean[] possibleCastles;
-    private boolean isCurrentPlayerWhite = true;
+    private final boolean[] allowedCastles;
+    private boolean isCurrentPlayerWhite;
     private final ChessPieces[][] currentPosition;
     private static ChessBoard chessBoard = null;
+    private int moveCounter = 0;
+    private int lastCaptureCounter = 0;
 
     public static ChessBoard getChessBoard() {
         if (chessBoard == null) {
-            chessBoard = new ChessBoard("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
+            chessBoard = new ChessBoard(FEN.DEFAULT_FEN_STRING);
         }
         return chessBoard;
     }
@@ -31,7 +30,7 @@ public class ChessBoard {
         whiteKing = ((int[][])result[1])[0];
         blackKing = ((int[][])result[1])[1];
         possibleEnPassant = FEN.getPossibleEnPassant(fenString,currentPosition);
-        possibleCastles = FEN.getPossibleCastles(fenString);
+        allowedCastles = FEN.getPossibleCastles(fenString);
         isCurrentPlayerWhite = FEN.getIsWhite(fenString);
     }
 
@@ -55,10 +54,11 @@ public class ChessBoard {
     public String[][] getBoardToString() {
         return Arrays.stream(currentPosition)
                 .map(row -> Arrays.stream(row)
-                        .map(chesspiece -> chesspiece != null ? chesspiece.toString() : "")
+                        .map(chessPiece -> chessPiece != null ? chessPiece.toString() : "")
                         .toArray(String[]::new))
                 .toArray(String[][]::new);
     }
+
 
 
     public void makeMove(ChessPieces piece, int newX, int newY) {
@@ -66,6 +66,8 @@ public class ChessBoard {
 
         // Make the move
         movePiece(piece, newX, newY);
+        if (currentPosition[newX][newY] != null) lastCaptureCounter=0;
+        else lastCaptureCounter++;
 
         // Handle pawn promotion`
         if (piece instanceof Pawn && (newX == 0 || newX == 7)) {
@@ -77,11 +79,13 @@ public class ChessBoard {
             possibleEnPassant = piece;
         }
 
+        if (! isCurrentPlayerWhite) moveCounter++;
+
         isCurrentPlayerWhite = !piece.isWhite();
 
         if (isCheckmate(isCurrentPlayerWhite)) {
             String winner = isCurrentPlayerWhite ? "Black" : "White";
-            BoardControl.Board.getInstance().announceWinner(winner);
+            UIComponents.Board.getInstance().announceWinner(winner);
         }
     }
     private void movePiece(ChessPieces piece, int newX, int newY) {
@@ -109,6 +113,8 @@ public class ChessBoard {
             currentPosition[x][y] = piece;
             piece.movePiece(x, y);
         }
+
+        if (! isCurrentPlayerWhite) moveCounter++;
 
         isCurrentPlayerWhite = !piece.isWhite();
 
@@ -197,12 +203,30 @@ public class ChessBoard {
         this.possibleEnPassant = possibleEnPassant;
     }
 
-    public void removePossibleCastle(Castles castle) {
-        possibleCastles[castle.id]=false;
+    public void disableCastle(Castles castle) {
+        allowedCastles[castle.id]=false;
     }
 
-    public boolean isCastlePossible(Castles castle) {
-        return possibleCastles[castle.id];
+    public boolean canPrefCastle(Castles castle,King king) {
+        if (allowedCastles[castle.id]
+                || king == null || king.hasMoved()
+                || isKingUnderAttack(king.isWhite()))
+            return false;
+
+        ChessPieces piece = currentPosition[castle.row][castle.rookCol];
+        if (!(piece instanceof Rook) || piece.hasMoved() ) return false;
+
+        int step = Integer.signum(castle.rookCol - king.getPositionY());
+        int y = king.getPositionY() + step;
+
+        while (y != piece.getPositionY()) {
+            if (!isSquareEmpty(king.getPositionX(), y) || isSquareUnderAttack(king.getPositionX(), y, king.isWhite())) {
+                return false;
+            }
+            y += step;
+        }
+
+        return true;
     }
 
     public void updateKingPosition(boolean isWhite, int[] position) {
@@ -223,19 +247,8 @@ public class ChessBoard {
         updateKingPosition(king.isWhite(),new int[]{king.getPositionX(),king.getPositionY()});
     }
 
-    public int[] getKingPosition(boolean isWhite) {
-        return isWhite ? whiteKing : blackKing;
-    }
-
     public void resetGameState() {
-        isCurrentPlayerWhite = true;
-        updateKingPosition(true,new int[]{7, 4});
-        updateKingPosition(false,new int[]{0, 4});
-        possibleCastles[0]=true;
-        possibleCastles[1]=true;
-        possibleCastles[2]=true;
-        possibleCastles[3]=true;
-        possibleEnPassant=null;
+        chessBoard = new ChessBoard(FEN.DEFAULT_FEN_STRING);
     }
 
     public boolean isKingUnderAttack(boolean isWhite) {
@@ -320,5 +333,9 @@ public class ChessBoard {
             }
         }
         return false;
+    }
+
+    public boolean isCastleAllowed(Castles castle) {
+        return allowedCastles[castle.id];
     }
 }

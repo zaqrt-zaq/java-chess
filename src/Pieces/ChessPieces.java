@@ -3,9 +3,6 @@ package Pieces;
 import java.util.ArrayList;
 import java.util.List;
 
-import BoardControl.Board;
-
-
 public abstract class ChessPieces {
     protected int positionX;
     protected int positionY;

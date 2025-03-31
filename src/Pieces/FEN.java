@@ -3,6 +3,7 @@ package Pieces;
 public class FEN {
     private FEN(){}
 
+    static String DEFAULT_FEN_STRING ="rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
     public static String getFENString(ChessBoard chessBoard){
         StringBuilder fenString = new StringBuilder();
         ChessPieces[][] chessPieces = chessBoard.getCurrentPosition();
@@ -27,7 +28,7 @@ public class FEN {
 
         fenString.append(" ");
         for (Castles castle : Castles.values()){
-            fenString.append(chessBoard.isCastlePossible(castle)?castle.getCharacter():"");
+            fenString.append(chessBoard.isCastleAllowed(castle)?castle.getCharacter():"");
         }
         if (fenString.charAt(fenString.length() - 1) == ' ') {
             fenString.append("-");
@@ -101,8 +102,8 @@ public class FEN {
         if (pieceString.equals("-")) {
             return null;
         }
-        int col = (int)(pieceString.charAt(0) - 'a');
-        int row = (int)(8 - pieceString.charAt(1));
+        int col = (pieceString.charAt(0) - 'a');
+        int row = (8 - pieceString.charAt(1));
         return chessPieces[row][col];
     }
 

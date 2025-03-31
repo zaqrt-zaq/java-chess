@@ -1,9 +1,7 @@
-package BoardControl;
+package UIComponents;
 
 import Pieces.ChessBoard;
 import Pieces.ChessPieces;
-import Pieces.King;
-import Pieces.Pawn;
 
 import javax.swing.*;
 import java.awt.*;
